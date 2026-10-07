@@ -136,17 +136,10 @@ def load_and_index_data():
     )
     chunks = text_splitter.split_documents(documents)
 
-    # Clean existing database and rebuild
-    if os.path.exists("chroma_db"):
-        try:
-            shutil.rmtree("chroma_db", ignore_errors=True)
-        except Exception:
-            pass
-
+    # Build in-memory vectorstore for cloud compatibility
     vectorstore = Chroma.from_documents(
         documents=chunks,
-        embedding=embeddings,
-        persist_directory="chroma_db"
+        embedding=embeddings
     )
 
     return vectorstore, loaded_filenames, len(documents), len(chunks)
