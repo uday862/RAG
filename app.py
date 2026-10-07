@@ -18,42 +18,64 @@ st.set_page_config(
     page_title="Uday Chatbot",
     page_icon="🤖",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"
 )
 
 st.markdown("""
     <style>
     /* ChatGPT Dark & Sleek Modern Theme */
     .stApp {
-        max-width: 1150px;
+        max-width: 1000px;
         margin: 0 auto;
     }
     .stChatMessage {
-        border-radius: 12px;
-        margin-bottom: 14px;
-        padding: 1rem;
+        border-radius: 14px;
+        margin-bottom: 12px;
+        padding: 0.9rem 1.1rem;
     }
     .main-header {
         text-align: center;
-        padding: 1.5rem 0 1rem 0;
+        padding: 1.2rem 0 0.8rem 0;
     }
     .main-header h1 {
-        font-size: 2.4rem;
+        font-size: 2.3rem;
         font-weight: 800;
         letter-spacing: -0.5px;
         color: #ffffff;
+        margin-bottom: 0.2rem;
+    }
+    .main-header .namaste {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #63b3ed;
         margin-bottom: 0.3rem;
     }
-    .main-header p {
+    .main-header .subtitle {
         color: #a0aec0;
-        font-size: 1.05rem;
+        font-size: 0.98rem;
     }
-    .status-badge {
-        background-color: #1a202c;
-        border: 1px solid #2d3748;
-        border-radius: 8px;
-        padding: 10px 14px;
-        margin-bottom: 12px;
+    
+    /* Mobile Phone Layout Optimizations */
+    @media (max-width: 768px) {
+        .main .block-container {
+            padding-bottom: 90px !important;
+            padding-left: 0.8rem !important;
+            padding-right: 0.8rem !important;
+            padding-top: 1rem !important;
+        }
+        .main-header h1 {
+            font-size: 1.8rem;
+        }
+        .main-header .namaste {
+            font-size: 1.1rem;
+        }
+        div[data-testid="stChatInput"] {
+            position: fixed;
+            bottom: 12px;
+            left: 10px;
+            right: 10px;
+            z-index: 9999;
+        }
     }
     </style>
 """, unsafe_allow_html=True)
@@ -92,7 +114,7 @@ llm = ChatGoogleGenerativeAI(
 )
 
 # -----------------------------------
-# Data Loader Function (Loads files from data/ folder)
+# Data Loader Function (Loads files from data directory)
 # -----------------------------------
 def load_and_index_data():
     data_dir = "data"
@@ -156,7 +178,7 @@ if "indexed" not in st.session_state:
 
 # Auto-index data on first startup if vectorstore not loaded
 if not st.session_state.indexed:
-    with st.spinner("⚡ Loading knowledge base from `data/` folder..."):
+    with st.spinner("⚡ Initializing Uday Chatbot Knowledge Base..."):
         vectorstore, filenames, total_docs, total_chunks = load_and_index_data()
         st.session_state.vectorstore = vectorstore
         st.session_state.filenames = filenames
@@ -169,33 +191,32 @@ if not st.session_state.indexed:
 # -----------------------------------
 with st.sidebar:
     st.title("🤖 Uday Chatbot")
-    st.caption("AI Assistant trained on your custom data")
+    st.caption("AI Assistant")
     st.divider()
 
-    st.subheader("📚 Knowledge Base (`data/`)")
+    st.subheader("📚 Knowledge Base")
     
     if st.session_state.filenames:
         st.success(f"Loaded {len(st.session_state.filenames)} File(s)")
         for fn in st.session_state.filenames:
             st.markdown(f"📄 `{fn}`")
         
-        st.markdown(f"**Total Pages/Docs:** `{st.session_state.total_docs}`")
+        st.markdown(f"**Total Documents:** `{st.session_state.total_docs}`")
         st.markdown(f"**Total Chunks:** `{st.session_state.total_chunks}`")
     else:
-        st.warning("⚠️ No documents found in `data/` folder.")
-        st.info("💡 Add your `.pdf` or `.txt` files to the `data/` folder and click **Sync Data** below.")
+        st.info("💡 Knowledge base is loading...")
 
     st.divider()
 
-    if st.button("🔄 Sync / Re-index Data", use_container_width=True, type="primary"):
-        with st.spinner("Re-indexing `data/` folder..."):
+    if st.button("🔄 Refresh Knowledge Base", use_container_width=True, type="primary"):
+        with st.spinner("Syncing Knowledge Base..."):
             vectorstore, filenames, total_docs, total_chunks = load_and_index_data()
             st.session_state.vectorstore = vectorstore
             st.session_state.filenames = filenames
             st.session_state.total_docs = total_docs
             st.session_state.total_chunks = total_chunks
             st.session_state.indexed = True
-            st.success("Re-indexing complete!")
+            st.success("Sync complete!")
             st.rerun()
 
     st.divider()
@@ -221,13 +242,10 @@ with st.sidebar:
 st.markdown("""
     <div class="main-header">
         <h1>🤖 Uday Chatbot</h1>
-        <p>Ask anything about the documents stored in your <code>data/</code> folder!</p>
+        <div class="namaste">Namaste! 🙏</div>
+        <div class="subtitle">Ask me anything about Uday or your documents</div>
     </div>
 """, unsafe_allow_html=True)
-
-# Display banner if data folder has no files
-if not st.session_state.filenames:
-    st.warning("📂 Place your PDFs or text files in the `data/` folder and click **Sync / Re-index Data** in the sidebar.")
 
 # Render existing chat history
 for message in st.session_state.messages:
@@ -241,7 +259,7 @@ for message in st.session_state.messages:
                     st.caption(doc.page_content)
                     st.divider()
 
-# Chat Input Box
+# Chat Input Box (Fixed properly at bottom on mobile)
 if user_prompt := st.chat_input("Ask Uday a question..."):
     
     # 1. Append User Message
@@ -252,7 +270,7 @@ if user_prompt := st.chat_input("Ask Uday a question..."):
     # 2. Assistant Response
     with st.chat_message("assistant"):
         if not st.session_state.vectorstore:
-            answer_text = "I don't have any data loaded yet. Please place files in the `data/` folder and click **Sync / Re-index Data**."
+            answer_text = "Namaste! 🙏 I don't have any knowledge base documents loaded yet."
             st.markdown(answer_text)
             relevant_docs = []
         else:
@@ -263,12 +281,12 @@ if user_prompt := st.chat_input("Ask Uday a question..."):
                 context = "\n\n".join([doc.page_content for doc in relevant_docs])
 
                 prompt = ChatPromptTemplate.from_template("""
-You are Uday Chatbot, an intelligent, helpful, and polite AI assistant.
+You are Uday Chatbot, an intelligent, polite, and helpful AI assistant. Always be warm and respectful.
 
 Answer the user's question accurately using ONLY the provided context below.
 
 If the answer cannot be found in the context, politely state:
-"I couldn't find this information in the uploaded data."
+"Namaste! 🙏 I couldn't find this information in the knowledge base."
 
 Context:
 {context}
