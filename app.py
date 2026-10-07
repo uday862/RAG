@@ -59,13 +59,22 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # -----------------------------------
-# Load Secret API Key from .env
+# Load Secret API Key from .env or Streamlit Cloud Secrets
 # -----------------------------------
 load_dotenv()
-api_key = os.getenv("GOOGLE_API_KEY") or os.getenv("OPENAI_API_KEY", "")
+
+api_key = os.getenv("GOOGLE_API_KEY")
+if not api_key and hasattr(st, "secrets"):
+    try:
+        api_key = st.secrets.get("GOOGLE_API_KEY", "")
+    except Exception:
+        pass
 
 if not api_key:
-    st.error("❌ `GOOGLE_API_KEY` is missing from your `.env` file. Please add it to start Uday Chatbot.")
+    api_key = os.getenv("OPENAI_API_KEY", "")
+
+if not api_key:
+    st.error("❌ `GOOGLE_API_KEY` is missing. Please add it to Streamlit Secrets in the Cloud Settings.")
     st.stop()
 
 # -----------------------------------
