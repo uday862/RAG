@@ -1,0 +1,10 @@
+# Environment variables & secrets
+.env
+
+# Cache & Build
+__pycache__/
+*.pyc
+
+# Local Vector Database & Data
+chroma_db/
+data/
